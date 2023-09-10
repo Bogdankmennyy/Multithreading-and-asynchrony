@@ -1,12 +1,33 @@
-﻿<Window x:Class="Multithreading_and_asynchrony.MainWindow"
+﻿<Window x:Class="FileCopyApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Multithreading_and_asynchrony"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="File Copy App" Height="300" Width="400">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Grid.Row="0" Content="Source File:"/>
+        <TextBox x:Name="SourceFileTextBox" Grid.Row="1" Margin="10"/>
+        <Button Grid.Row="2" Content="Select Source File" Click="SelectSourceFile_Click" HorizontalAlignment="Left" Margin="10"/>
+
+        <Label Grid.Row="3" Content="Destination Folder:"/>
+        <TextBox x:Name="DestinationFolderTextBox" Grid.Row="4" Margin="10"/>
+        <Button Grid.Row="5" Content="Select Destination Folder" Click="SelectDestinationFolder_Click" HorizontalAlignment="Left" Margin="10"/>
+
+        <Label Grid.Row="6" Content="Number of Threads:"/>
+        <Slider x:Name="ThreadSlider" Grid.Row="7" Minimum="1" Maximum="10" Value="1" Margin="10"/>
+
+        <Button Grid.Row="8" Content="Start Copying" Click="StartCopying_Click" HorizontalAlignment="Left" Margin="10"/>
+
+        <ProgressBar x:Name="ProgressBar" Grid.Row="9" Height="20" Margin="10" Visibility="Hidden"/>
     </Grid>
 </Window>
+
