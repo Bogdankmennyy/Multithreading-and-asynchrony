@@ -117,6 +117,7 @@ private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
 
                     Dispatcher.Invoke(() => ProgressBar.Value = copiedFileSize, System.Windows.Threading.DispatcherPriority.Render);
                 }
+
             }
         }
     }
