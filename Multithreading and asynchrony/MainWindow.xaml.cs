@@ -13,13 +13,17 @@ namespace FileCopyApp
         private int numberOfThreads = 1;
         private long totalFileSize;
         private long copiedFileSize;
+        private bool isCopyingPaused = false;
+        private bool isCopyingStopped = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            // Обработчик события закрытия окна для завершения копирования приложения.
+            this.Closing += MainWindow_Closing;
         }
 
-        private void SelectSourceFile_Click(object sender, RoutedEventArgs e)
+        private async void SelectSourceFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == true)
@@ -31,30 +35,25 @@ namespace FileCopyApp
             }
         }
 
-     
-
-private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
-    {
-        var folderDialog = new OpenFileDialog
+        private async void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
         {
-            Title = "Select Destination Folder",
-            CheckFileExists = false,
-            FileName = "Folder Selection.",
-            Filter = "Folder|no.files"
-        };
+            using (var folderDialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                System.Windows.Forms.DialogResult result = folderDialog.ShowDialog();
 
-        if (folderDialog.ShowDialog() == true)
-        {
-            destinationFolderPath = System.IO.Path.GetDirectoryName(folderDialog.FileName);
-            DestinationFolderTextBox.Text = destinationFolderPath;
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    destinationFolderPath = folderDialog.SelectedPath;
+                    DestinationFolderTextBox.Text = destinationFolderPath;
+                }
+            }
         }
-    }
 
-
-
-
-    private async void StartCopying_Click(object sender, RoutedEventArgs e)
+        private async void StartCopying_Click(object sender, RoutedEventArgs e)
         {
+            isCopyingPaused = false;
+            isCopyingStopped = false;
+
             if (string.IsNullOrEmpty(sourceFilePath) || string.IsNullOrEmpty(destinationFolderPath))
             {
                 MessageBox.Show("Please select source file and destination folder.");
@@ -78,6 +77,18 @@ private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
             MessageBox.Show("File copied successfully!");
         }
 
+        private void PauseCopying_Click(object sender, RoutedEventArgs e)
+        {
+            isCopyingPaused = !isCopyingPaused;
+            // Обновляем текст на кнопке "Пауза" в зависимости от состояния.
+            PauseCopyingButton.Content = isCopyingPaused ? "Продолжить" : "Пауза";
+        }
+
+        private void StopCopying_Click(object sender, RoutedEventArgs e)
+        {
+            isCopyingStopped = true;
+        }
+
         private async Task CopyFileAsync(string sourceFilePath, string destinationFolderPath, int numberOfThreads)
         {
             using (FileStream sourceStream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read))
@@ -87,6 +98,16 @@ private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
 
                 for (int i = 0; i < numberOfThreads; i++)
                 {
+                    if (isCopyingStopped)
+                    {
+                        return;
+                    }
+
+                    while (isCopyingPaused)
+                    {
+                        await Task.Delay(500);
+                    }
+
                     long startOffset = i * blockSize;
                     long endOffset = (i == numberOfThreads - 1) ? totalFileSize : (i + 1) * blockSize;
                     tasks[i] = CopyBlockAsync(sourceStream, Path.Combine(destinationFolderPath, System.IO.Path.GetFileName(sourceFilePath)), startOffset, endOffset);
@@ -107,6 +128,16 @@ private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
 
                 while (startOffset < endOffset)
                 {
+                    if (isCopyingStopped)
+                    {
+                        return;
+                    }
+
+                    while (isCopyingPaused)
+                    {
+                        await Task.Delay(500);
+                    }
+
                     int bytesRead = await sourceStream.ReadAsync(buffer, 0, bufferSize);
                     if (bytesRead == 0)
                         break;
@@ -118,6 +149,12 @@ private void SelectDestinationFolder_Click(object sender, RoutedEventArgs e)
                     Dispatcher.Invoke(() => ProgressBar.Value = copiedFileSize, System.Windows.Threading.DispatcherPriority.Render);
                 }
             }
+        }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Завершаем копирование перед закрытием окна.
+            isCopyingStopped = true;
         }
     }
 }
